@@ -1,0 +1,105 @@
+---
+title: "Comp456_trauma"
+author: "Wenxuan Zhu"
+date: "`r Sys.Date()`"
+output: 
+  html_document:
+    theme: flatly
+    toc: true
+    toc_float:
+      collapsed: false
+    code_download: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+
+df <- read_csv("df.csv")
+PUF2021_100622 <- read_csv("PUF2021_100622.csv")
+```
+
+# Research Questions
+- Mental Health: How did pandemic impact mental health among college students of color?
+- ACE: How does adverse children experience impact childrens’ long term behavioral / health?
+- ACE: Are there significant differences in ACE scores based on races/ethnicities or family income?
+
+# Dataset 1: N-MHSS 2020
+
+> https://www.datafiles.samhsa.gov/dataset/national-mental-health-services-survey-2019-n-mhss-2019-ds0001
+
+The National Mental Health Services Survey (N-MHSS) is an annual survey conducted by the Substance Abuse and Mental Health Services Administration (SAMHSA) in the United States. 
+
+The N-MHSS survey gathers information on all known mental health treatment facilities in the 50 states, the District of Columbia, and U.S. territories and jurisdictions. The survey collects data on a wide range of mental health facilities, including public and private psychiatric hospitals, nonfederal general hospitals with separate psychiatric units, U.S. Department of Veterans Affairs medical centers, residential treatment centers for children and adults, community mental health centers, outpatient and day treatment mental health facilities, and more. Thus, this data provides valuable insights into the mental health service delivery system in the United States.
+
+Two data limitation are mentioned in this case. On the one hand, N-MHSS is a voluntary survey, and while it attempts to obtain responses from all known mental health treatment facilities within the scope of the survey, some facilities do not respond. The data are not adjusted for facility nonresponse. On the other hand, multiple responses are allowed for certain questionnaire items.
+
+Some important variables are: 
+- LST: State postal code
+- MHINTAKE: Facility offers mental health intake (Q.A1)
+- MHDIAGEVAL: Facility offers mental health diagnostic evaluation (Q.A1)
+- TREATOTH: Facility offers other mental health treatment approach (Q.A10)
+- MHEMGCY: Facility offers psychiatric emergency walk-in services (Q.A11)
+- YOUNGADULTS: Accepts young adults (aged 18-25 years old) for treatment (Q.A12)
+
+First 100 variable names are listed below: 
+```{r}
+colnames(df)[1:100]
+# 384 variables in total
+```
+
+## Visualize one variable
+```{r}
+df %>% 
+  ggplot(aes(x= MHEMGCY)) +
+  geom_bar(fill = "#01426A") + 
+  scale_x_discrete(labels = c("-1" = "Missing", "0" = "No", "1" = "Yes")) +
+  theme_minimal()+ 
+  labs(title = "Facility offers psychiatric emergency walk-in services")
+```
+
+# Dataset 2: NSDUH 2021
+> https://www.datafiles.samhsa.gov/dataset/national-survey-drug-use-and-health-2021-nsduh-2021-ds0001
+
+The National Survey on Drug Use and Health (NSDUH) is also an annual survey conducted by the Substance Abuse and Mental Health Services Administration (SAMHSA) in the United States. 
+
+The dataset includes information on the general civilian population in the United States aged 12 and older. It covers a wide range of topics related to substance use, including alcohol, tobacco, and drugs. These topics include measures of lifetime, past-year, and past-month use, age at first use, treatment history, substance use disorders, and more. Additionally, the survey addresses mental health issues, such as major depressive episodes, suicidal ideation, mental illness, access to mental health care, and various demographic variables.
+
+The dataset has some limitations, including the lack of comparability between data from different years due to changes in methodology and questionnaire revisions. Specifically, data from 2020 and 2021 are not comparable to previous years due to web-based interviewing. 
+
+Some interesting variables are: 
+- CIGREC: TIME SINCE LAST SMOKED CIGARETTES
+- CIGTRY: AGE WHEN FIRST SMOKED A CIGARETTE
+- INHALEVER: EVER USED INHALANTS
+- INHALAGE: AGE WHEN FIRST USED INHALANTS
+- UDHENOTSTOP: UNABLE TO CUT/STOP HEROIN USE MORE THAN ONE TIME PAST 12 MOS
+
+
+First 100 variable names are listed below: 
+```{r}
+colnames(PUF2021_100622)[1:100]
+# 2988 variables in total
+```
+
+## Visualize one variable
+```{r}
+PUF2021_100622 %>% 
+  select(cigmfu) %>% 
+  filter(cigmfu <= 12) %>% 
+  ggplot(aes(x = cigmfu))+
+  geom_bar(fill = "#01426A")+
+  theme_minimal()+ 
+  labs(title = "Month of First Cigarette Use for Respondents") + 
+  scale_x_discrete(limits = 1:12)
+```
+
+
+
+
+
+
+
+
