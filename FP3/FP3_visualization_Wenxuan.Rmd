@@ -1,0 +1,73 @@
+---
+title: "FP3 Visualization"
+author: "Wenxuan Zhu"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(ggpubr)
+
+theme_set(theme_minimal())
+```
+
+```{r}
+df <- read_csv("/Users/zhuwenxuan/Desktop/STAT 456/final project/topical_data_cleaned.csv")
+```
+
+```{r fig.alt="The figure consists of multiple box plots, each representing one of the three types of kids' mental health problems: ADD/ADHD, depression, and anxiety. On the x-axis, we have the severity levels of these problems: mild, moderate, severe, and NA. The y-axis represents the range of ACE scores, which varies from 0 to 10. From the plot, across all three mental health problem types, children with severe mental health issues consistently exhibit significantly higher ACE scores compared to those with mild or moderate issues. This pattern underscores a strong association between the severity of mental health problems in children and their ACE scores, emphasizing the potential impact of adverse childhood experiences on mental health outcomes."}
+# Recode severity levels
+df_kid_mental <- df %>%
+  select(ACE_score, K2Q31C, K2Q32C, K2Q33C) %>%
+  mutate_at(vars(K2Q31C, K2Q32C, K2Q33C), # ADD/ADHD, Depression, Anxiety
+    ~ ifelse(. == "1", "Mild",
+      ifelse(. == "2", "Moderate",
+        ifelse(. == "3", "Severe", NA))))
+
+# Define color-blind friendly colors
+cb_palette <- c("#0072B2", "#009E73", "#D55E00")
+
+# Create the bar plot
+add <- ggplot(df_kid_mental, aes(x = K2Q31C, y = ACE_score, fill = K2Q31C)) +
+  geom_boxplot() +
+  facet_wrap(~K2Q31C, scales = "free_x", nrow = 1) +  # Facet by mental problem
+  scale_fill_manual(values = cb_palette) +
+  labs(
+    x = "ADD/ADHD",
+    y = "ACE Score",
+    fill = "Severity"
+  ) 
+
+dep <- ggplot(df_kid_mental, aes(x = K2Q32C, y = ACE_score, fill = K2Q32C)) +
+  geom_boxplot() +
+  facet_wrap(~K2Q32C, scales = "free_x", nrow = 1) +  # Facet by mental problem
+  scale_fill_manual(values = cb_palette) +
+  labs(
+    x = "Depression",
+    y = "ACE Score",
+    fill = "Severity"
+  ) 
+
+anx <- ggplot(df_kid_mental, aes(x = K2Q33C, y = ACE_score, fill = K2Q33C)) +
+  geom_boxplot() +
+  facet_wrap(~K2Q33C, scales = "free_x", nrow = 1) +  # Facet by mental problem
+  scale_fill_manual(values = cb_palette) +
+  labs(
+    x = "Anxiety",
+    y = "ACE Score",
+    fill = "Severity"
+  ) 
+
+ggarrange(add, dep, anx, 
+          common.legend = TRUE,
+          legend = "right",
+          labels = c("A", "B", "C"),
+          ncol = 1, nrow = 3)
+```
+
+The motivation for this visualization is to explore the relationship between the severity of kids' mental health problems (specifically ADD/ADHD, depression, and anxiety) and their ACE (Adverse Childhood Experiences) scores. ACE scores are a measure of the number of adverse experiences a person had during their childhood, such as abuse, neglect, or household dysfunction. Understanding this relationship is important because it can provide insights into how childhood experiences may be associated with the severity of mental health issues in children.
+
+One of the most striking observations from the visualization is that across all three types of mental health problems, children with severe mental health issues tend to have significantly higher ACE scores compared to those with mild or moderate issues. This might suggest that children who have experienced more adverse childhood experiences are more likely to develop severe mental health problems.
