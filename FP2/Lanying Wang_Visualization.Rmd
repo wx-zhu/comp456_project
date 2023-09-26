@@ -1,0 +1,105 @@
+---
+title: "visualization"
+author: "Lanying Wang"
+date: "2023-09-25"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(ggplot2)
+library(tidyverse)
+library(dplyr)
+library(haven)
+library(ggpubr)
+topical_data <- read_csv("~/Desktop/comp 456/topical_data_cleaned.csv")
+```
+
+```{r}
+topical_data%>%
+ mutate(
+    K2Q31A = ifelse(K2Q31A == 2, 0, 1))
+```
+
+```{r}
+model_1 <- lm(K2Q31A ~ ACE_score, data = topical_data)
+summary(model_1)
+```
+
+```{r}
+ADD_table <- table(topical_data$ACE_score, topical_data$K2Q31A)
+ADD_table
+chi_squared_result <- chisq.test(ADD_table)
+chi_squared_result
+
+ADD_contingency_df <- as.data.frame(as.table(ADD_table))
+```
+```{r}
+Depression_table <- table(topical_data$ACE_score, topical_data$K2Q32A)
+Depression_table
+chi_squared_result <- chisq.test(Depression_table)
+chi_squared_result
+
+Depression_contingency_df <- as.data.frame(as.table(Depression_table))
+```
+```{r}
+Anxiety_table <- table(topical_data$ACE_score, topical_data$K2Q33A)
+Anxiety_table
+chi_squared_result <- chisq.test(Anxiety_table)
+chi_squared_result
+
+Anxiety_contingency_df <- as.data.frame(as.table(Anxiety_table))
+```
+
+```{r}
+ADD_contingency_df <- ADD_contingency_df %>%
+  group_by(Var1) %>%
+  mutate(Total = sum(Freq),
+         Proportion = Freq / Total)
+
+ADD_plot<- ggplot(data = ADD_contingency_df, aes(x = Var1, y = Proportion, fill = Var2)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  labs(x = "ACE Score", y = "Proportion of results", fill = "Diagnosis") +
+  ggtitle("ADHD Diagnosis by ACE Score") +
+  scale_fill_manual(values = c( "#0072B2", 
+                                "#D55E00"), labels=c('YES', 'NO'))+
+  theme_minimal()
+```
+
+```{r}
+Depression_contingency_df <- Depression_contingency_df %>%
+  group_by(Var1) %>%
+  mutate(Total = sum(Freq),
+         Proportion = Freq / Total)
+
+Depression_plot <- ggplot(data = Depression_contingency_df, aes(x = Var1, y = Proportion, fill = Var2)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  labs(x = "ACE Score", y = "Proportion of results", fill = "Diagnosis") +
+  ggtitle("Depression Diagnosis by ACE Score") +
+  scale_fill_manual(values = c( "#0072B2", 
+                                "#D55E00"), labels=c('YES', 'NO'))+
+  theme_minimal()
+```
+
+```{r}
+Anxiety_contingency_df <- Anxiety_contingency_df %>%
+  group_by(Var1) %>%
+  mutate(Total = sum(Freq),
+         Proportion = Freq / Total)
+
+Anxiety_plot <- ggplot(data = Anxiety_contingency_df, aes(x = Var1, y = Proportion, fill = Var2)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  labs(x = "ACE Score", y = "Proportion of result for each score", fill = "Diagnosis") +
+  ggtitle("Anxiety Diagnosis by ACE Score") +
+  scale_fill_manual(values = c( "#0072B2", 
+                                "#D55E00"), labels=c('YES', 'NO'))+
+  theme_minimal()
+```
+
+```{r}
+ggarrange(ADD_plot, Depression_plot, Anxiety_plot, 
+          common.legend = TRUE,
+          legend = "right",
+          labels = c("A", "B", "C"),
+          ncol = 3, nrow = 1)
+```
