@@ -10,18 +10,19 @@ knitr::opts_chunk$set(echo = TRUE)
 
 library(tidyverse)
 library(tidymodels)
-library(ggpubr)
+library(ggpubr) # plot
 library(caTools) # For sampling the dataset
 library(randomForest) # For implementing random forest algorithm
 library(naniar) # identify where NA is
-library(haven) # sas
-
+library(haven) # sas7bdat file
 
 theme_set(theme_minimal())
 ```
 
 ```{r}
 df <- read_csv("/Users/zhuwenxuan/Desktop/STAT 456/final project/topical_data_cleaned.csv")
+
+df_screener <- read_sas("nsch_2021_screener.sas7bdat")
 
 # How many NA?
 n_miss(df) # 5197288
@@ -44,18 +45,18 @@ df_kid_mental <- df %>%
         ifelse(. == "3", "Severe", NA))))
 ```
 
-### Boxplot
+### ADD/ADHD, depression, and anxiety Boxplot
 ```{r fig.alt="The figure consists of multiple box plots, each representing one of the three types of kids' mental health problems: ADD/ADHD, depression, and anxiety. On the x-axis, we have the severity levels of these problems: mild, moderate, severe, and NA. The y-axis represents the range of ACE scores, which varies from 0 to 10. From the plot, across all three mental health problem types, children with severe mental health issues consistently exhibit significantly higher ACE scores compared to those with mild or moderate issues. This pattern underscores a strong association between the severity of mental health problems in children and their ACE scores, emphasizing the potential impact of adverse childhood experiences on mental health outcomes."}
 # Define color-blind friendly colors
-cb_palette <- c("#0072B2", "#009E73", "#D55E00")
+cb_color <- c("#0072B2", "#009E73", "#D55E00")
 
 # Create the bar plot
 add <- df_kid_mental %>% 
   na.omit(K2Q31C) %>% 
-  ggplot(aes(x = K2Q31C, y = ACE_score, fill = K2Q31C)) +
+  ggplot(aes(y = K2Q31C, x = ACE_score, fill = K2Q31C)) +
   geom_boxplot() +
   facet_wrap(~K2Q31C, scales = "free_x", nrow = 1) +  # Facet by mental problem
-  scale_fill_manual(values = cb_palette) +
+  scale_fill_manual(values = cb_color) +
   labs(
     x = "ADD/ADHD",
     y = "ACE Score",
@@ -64,10 +65,10 @@ add <- df_kid_mental %>%
 
 dep <- df_kid_mental %>% 
   na.omit(K2Q32C) %>% 
-  ggplot(aes(x = K2Q32C, y = ACE_score, fill = K2Q32C)) +
+  ggplot(aes(y = K2Q32C, x = ACE_score, fill = K2Q32C)) +
   geom_boxplot() +
   facet_wrap(~K2Q32C, scales = "free_x", nrow = 1) +  # Facet by mental problem
-  scale_fill_manual(values = cb_palette) +
+  scale_fill_manual(values = cb_color) +
   labs(
     x = "Depression",
     y = "ACE Score",
@@ -76,10 +77,10 @@ dep <- df_kid_mental %>%
 
 anx <- df_kid_mental %>% 
   na.omit(K2Q33C) %>% 
-  ggplot(aes(x = K2Q33C, y = ACE_score, fill = K2Q33C)) +
+  ggplot(aes(y = K2Q33C, x = ACE_score, fill = K2Q33C)) +
   geom_boxplot() +
   facet_wrap(~K2Q33C, scales = "free_x", nrow = 1) +  # Facet by mental problem
-  scale_fill_manual(values = cb_palette) +
+  scale_fill_manual(values = cb_color) +
   labs(
     x = "Anxiety",
     y = "ACE Score",
@@ -97,8 +98,42 @@ The motivation for this visualization is to explore the relationship between the
 
 One of the most striking observations from the visualization is that across all three types of mental health problems, children with severe mental health issues tend to have significantly higher ACE scores compared to those with mild or moderate issues. This might suggest that children who have experienced more adverse childhood experiences are more likely to develop severe mental health problems.
 
+### Indirect/Unclear factors to ACEs
+K2Q35A_1_YEARS: How old was this child when a doctor or other health care provider FIRST told you that they had Autism, ASD, Asperger's Disorder or PDD?
+K2Q36A ~ C: development delay
+K2Q37A ~ C: speech disorder
+K2Q40A ~ C: Asthma (哮喘)
+K2Q41A ~ C: diabetes
+K2Q42A ~ C: Epilepsy (癫痫)
+K2Q60A ~ C: intellectual disability 
+Unclear: 
+CYSTFIB:  Has a doctor or other health care provider EVER told you that this child has… Cystic Fibrosis?
 
-## Family condition
+```{r}
+df_kid_mental_indirect <- df %>%
+  select(ACE_score, K2Q35A_1_YEARS, K2Q36C, K2Q37C, K2Q40C, K2Q41C, K2Q42C, K2Q60C) %>%
+  mutate_at(vars(K2Q36C, K2Q37C, K2Q40C, K2Q41C, K2Q42C, K2Q60C), 
+    ~ ifelse(. == "1", "Mild",
+      ifelse(. == "2", "Moderate",
+        ifelse(. == "3", "Severe", NA))))
+
+colnames(df_kid_mental_indirect)[which(names(df_kid_mental_indirect) == "K2Q36C")] <- "Development_Delay"
+```
+
+```{r}
+# K2Q35A_1_YEARS: How old was this child when a doctor or other health care provider FIRST told you that they had Autism, ASD, Asperger's Disorder or PDD?
+df_kid_mental_indirect %>% 
+  filter(!is.na(K2Q35A_1_YEARS)) %>% 
+  ggplot(aes(x = factor(ACE_score), y = factor(K2Q35A_1_YEARS), color = Development_Delay)) +
+  geom_count() +
+  labs(x = "ACE Score", y = "Age at Initial Autism Diagnosis") +
+  theme_minimal()  + 
+  theme(legend.position = "right")
+```
+
+
+
+## Kids ind
 ```{r}
 
 ```
