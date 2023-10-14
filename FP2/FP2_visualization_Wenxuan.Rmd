@@ -15,6 +15,8 @@ library(caTools) # For sampling the dataset
 library(randomForest) # For implementing random forest algorithm
 library(naniar) # identify where NA is
 library(haven) # sas7bdat file
+library(viridis)  # Load the viridis color palette, which is color-blind friendly
+library(plotly)
 
 theme_set(theme_minimal())
 ```
@@ -55,11 +57,11 @@ add <- df_kid_mental %>%
   na.omit(K2Q31C) %>% 
   ggplot(aes(y = K2Q31C, x = ACE_score, fill = K2Q31C)) +
   geom_boxplot() +
-  facet_wrap(~K2Q31C, scales = "free_x", nrow = 1) +  # Facet by mental problem
+  # facet_wrap(~K2Q31C, scales = "free_x", nrow = 1) +  # Facet by mental problem
   scale_fill_manual(values = cb_color) +
   labs(
-    x = "ADD/ADHD",
-    y = "ACE Score",
+    y = "ADD/ADHD",
+    x = "ACE Score",
     fill = "Severity"
   ) 
 
@@ -67,11 +69,11 @@ dep <- df_kid_mental %>%
   na.omit(K2Q32C) %>% 
   ggplot(aes(y = K2Q32C, x = ACE_score, fill = K2Q32C)) +
   geom_boxplot() +
-  facet_wrap(~K2Q32C, scales = "free_x", nrow = 1) +  # Facet by mental problem
+  # facet_wrap(~K2Q32C, scales = "free_x", nrow = 1) +  # Facet by mental problem
   scale_fill_manual(values = cb_color) +
   labs(
-    x = "Depression",
-    y = "ACE Score",
+    y = "Depression",
+    x = "ACE Score",
     fill = "Severity"
   ) 
 
@@ -79,11 +81,11 @@ anx <- df_kid_mental %>%
   na.omit(K2Q33C) %>% 
   ggplot(aes(y = K2Q33C, x = ACE_score, fill = K2Q33C)) +
   geom_boxplot() +
-  facet_wrap(~K2Q33C, scales = "free_x", nrow = 1) +  # Facet by mental problem
+  # facet_wrap(~K2Q33C, scales = "free_x", nrow = 1) +  # Facet by mental problem
   scale_fill_manual(values = cb_color) +
   labs(
-    x = "Anxiety",
-    y = "ACE Score",
+    y = "Anxiety",
+    x = "ACE Score",
     fill = "Severity"
   ) 
 
@@ -103,7 +105,7 @@ K2Q35A_1_YEARS: How old was this child when a doctor or other health care provid
 K2Q36A ~ C: development delay
 K2Q37A ~ C: speech disorder
 K2Q40A ~ C: Asthma (哮喘)
-K2Q41A ~ C: diabetes
+K2Q41A ~ C: diabetes. # no plots feasible
 K2Q42A ~ C: Epilepsy (癫痫)
 K2Q60A ~ C: intellectual disability 
 Unclear: 
@@ -111,13 +113,19 @@ CYSTFIB:  Has a doctor or other health care provider EVER told you that this chi
 
 ```{r}
 df_kid_mental_indirect <- df %>%
-  select(ACE_score, K2Q35A_1_YEARS, K2Q36C, K2Q37C, K2Q40C, K2Q41C, K2Q42C, K2Q60C) %>%
+  select(ACE_score, K2Q35A_1_YEARS, K2Q36A:K2Q36C, K2Q37A:K2Q37C, K2Q40A:K2Q40C, K2Q41A:K2Q41C, K2Q42A:K2Q42C, K2Q60A:K2Q60C) %>%
   mutate_at(vars(K2Q36C, K2Q37C, K2Q40C, K2Q41C, K2Q42C, K2Q60C), 
     ~ ifelse(. == "1", "Mild",
       ifelse(. == "2", "Moderate",
-        ifelse(. == "3", "Severe", NA))))
+        ifelse(. == "3", "Severe", NA)))) %>% 
+  mutate_at(vars(K2Q36A, K2Q37A, K2Q40A, K2Q41A, K2Q42A, K2Q60A), 
+    ~ ifelse(. == "1", "Yes",
+      ifelse(. == "2", "No", NA)))
 
 colnames(df_kid_mental_indirect)[which(names(df_kid_mental_indirect) == "K2Q36C")] <- "Development_Delay"
+colnames(df_kid_mental_indirect)[which(names(df_kid_mental_indirect) == "K2Q37A")] <- "Speech_Disorder"
+colnames(df_kid_mental_indirect)[which(names(df_kid_mental_indirect) == "K2Q60C")] <- "Intellectual_Disability"
+colnames(df_kid_mental_indirect)[which(names(df_kid_mental_indirect) == "K2Q41C")] <- "Diabetes"
 ```
 
 ```{r}
@@ -126,15 +134,154 @@ df_kid_mental_indirect %>%
   filter(!is.na(K2Q35A_1_YEARS)) %>% 
   ggplot(aes(x = factor(ACE_score), y = factor(K2Q35A_1_YEARS), color = Development_Delay)) +
   geom_count() +
+  scale_color_manual(values = c("#0072B2", "#009E73", "#D55E00")) +
   labs(x = "ACE Score", y = "Age at Initial Autism Diagnosis") +
   theme_minimal()  + 
-  theme(legend.position = "right")
+  theme(legend.position = "right") + 
+  geom_rect(aes(xmin = 3.7, xmax = 10.3, ymin = 0.6, ymax = 6.4), color = "red",alpha = 0.00) + 
+  labs(title = "ACE Score vs. Autism Diagnosis Age", 
+       subtitle = "Red Box: Early Autism Diagnosis Among Children with Higher ACE Scores")
 ```
 
-
-
-## Kids ind
 ```{r}
+# K2Q37A ~ C: speech disorder
+df_kid_mental_indirect %>%
+  filter(!is.na(Speech_Disorder)) %>%
+  ggplot(aes(x = ACE_score, y = Speech_Disorder, group = Speech_Disorder, fill = Speech_Disorder)) +
+  geom_boxplot() +
+ # geom_vline(xintercept = 4, color = "#009E73") +
+ # annotate("text", x= 7, y = 2.3, label= "Number of kids: 154", color = "#009E73") + 
+  scale_x_continuous(limits = c(0,10), breaks = seq(0, 10, by = 2)) +
+  scale_fill_manual(values = c("#0072B2", "#D55E00")) +
+  labs(x = "ACE Score", y = "Speech Disorder", 
+       title = "ACE Score's Impact on Speech Disorder")
+```
 
+```{r}
+# K2Q60C: intellectual disability 
+df_kid_mental_indirect %>%
+  filter(!is.na(Intellectual_Disability)) %>%
+  ggplot(aes(x = ACE_score, fill = Intellectual_Disability)) + 
+  geom_bar() +
+  scale_x_continuous(limits = c(-1,10), breaks = seq(0,10, by = 2)) + 
+  scale_fill_manual(values = c("#0072B2", "#009E73", "#D55E00")) +
+  labs(x = "ACE Score", y = "Intellectual Disability", 
+       title = "ACE Score's Impact on Intellectual Disability")
+```
+
+## Kids physical health: 
+### Preventive_Dental_Visit
+```{r}
+df_kid_physical <- df %>%
+  select(ACE_score, DENTISTVISIT) %>%
+  mutate_at(vars(DENTISTVISIT), 
+    ~ ifelse(. == "1", "No preventive visits in past 12 months",
+      ifelse(. == "2", "Yes, 1 visit",
+        ifelse(. == "3", "Yes, 2 or more visits", NA)))) 
+
+colnames(df_kid_physical)[which(names(df_kid_physical) == "DENTISTVISIT")] <- "Preventive_Dental_Visit"
+
+# Replace NA values in ACE_score with 0
+df_kid_physical <- df_kid_physical %>%
+  mutate(ACE_score = ifelse(is.na(ACE_score), 0, ACE_score))
+
+# Create a 2D histogram
+df_kid_physical %>%
+  ggplot(aes(x = factor(ACE_score), y = Preventive_Dental_Visit)) +
+  geom_bin2d() +
+  scale_fill_gradient(low = "#000000", high = "#FFB000") + 
+  labs(x = "ACE Score", y = "Preventive Dental Visit",
+       title = "Correlation Between ACE Score and Preventive Dental Visits") +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 1))
+```
+
+## Kids' behavior: 
+- BULLIED_R：Bullied, Picked On, or Excluded by Others
+- BULLY：bully others
+- ERRANDALONE: Does this child have any of the following? Difficulty doing errands alone such as visiting a doctor's office or shopping, because of a physical, mental, or emotional condition
+- HCABILITY: DURING THE PAST 12 MONTHS, how often have this child's health conditions or problems affected their ability to do things other children their same age do?
+- HCEXTENT: To what extent do this child's health conditions or problems affect their ability to do things?
+- DISTRACTED: How often is this child easily distracted?
+```{r}
+df_kid_behavior <- df %>%
+  select(ACE_score, BULLIED_R, BULLY, ERRANDALONE, HCABILITY, HCEXTENT, DISTRACTED) %>%
+  mutate_at(vars(BULLIED_R, BULLY), 
+    ~ case_when(
+      . == "1" ~ "Never (in the past 12 months)",
+      . == "2" ~ "1-2 times (in the past 12 months)",
+      . == "3" ~ "1-2 times per month",
+      . == "4" ~ "1-2 times per week",
+      . == "5" ~ "Almost every day",
+      TRUE ~ as.character(.))) %>% 
+  mutate_at(vars(ERRANDALONE), 
+    ~ case_when(
+      . == "1" ~ "Yes",
+      . == "2" ~ "No",
+      TRUE ~ as.character(.))) %>% 
+  mutate_at(vars(HCABILITY), 
+    ~ case_when(
+      . == "1" ~ "This child does not have any health conditions",
+      . == "2" ~ "Never",
+      . == "3" ~ "Sometimes",
+      . == "4" ~ "Usually",
+      . == "5" ~ "Always",
+      TRUE ~ as.character(.))) %>% 
+  mutate_at(vars(HCEXTENT), 
+    ~ case_when(
+      . == "1" ~ "Very little",
+      . == "2" ~ "Somewhat",
+      . == "3" ~ "A great deal",
+      TRUE ~ as.character(.))) %>% 
+  mutate_at(vars(DISTRACTED), 
+    ~ case_when(
+      . == "1" ~ "Always",
+      . == "2" ~ "Most of the time",
+      . == "3" ~ "About half the time",
+      . == "4" ~ "Sometimes",
+      . == "5" ~ "Never",
+      TRUE ~ as.character(.)))
+  
+colnames(df_kid_behavior)[which(names(df_kid_behavior) == "BULLIED_R")] <- "Bullied_by_others"
+colnames(df_kid_behavior)[which(names(df_kid_behavior) == "BULLY")] <- "Bully_others"
+colnames(df_kid_behavior)[which(names(df_kid_behavior) == "ERRANDALONE")] <- "Difficulty_Doing_Errands_Alone"
+colnames(df_kid_behavior)[which(names(df_kid_behavior) == "HCABILITY")] <- "Health_Affected_Ability"
+colnames(df_kid_behavior)[which(names(df_kid_behavior) == "HCEXTENT")] <- "Health_Affected_Ability_Extent"
+colnames(df_kid_behavior)[which(names(df_kid_behavior) == "HCABILITY")] <- "Health_Affected_Ability_Often"
+```
+
+```{r}
+# Bullied_by_others & Bully_others
+df_kid_behavior %>%
+  drop_na(Bullied_by_others, Bully_others) %>%
+  ggplot(aes(x = ACE_score, y = Bullied_by_others, color = Bully_others)) +
+  geom_count() +
+  scale_x_continuous(limits = c(-1,10), breaks = seq(0,10, by = 2)) + 
+  scale_color_manual(values = c(
+    "Never (in the past 12 months)" = "#648FFF", 
+    "1-2 times (in the past 12 months)" = "#785EF0", 
+    "1-2 times per month" = "#DC267F", 
+    "1-2 times per week" = "#FE6100", 
+    "Almost every day" = "#FFB000")) +
+  labs(x = "ACE Score", y = "Bullied by Others", 
+       title = "ACE Scores and Bullying Incidents") +
+  theme_minimal()
+```
+
+```{r}
+# Health_Affected_Ability & Health_Affected_Ability_Extent & Health_Affected_Ability_Often
+
+# Create a bar plot
+df_kid_behavior %>%
+  drop_na(Health_Affected_Ability, Health_Affected_Ability_Extent) %>% 
+  ggplot(aes(x = ACE_score, fill = Health_Affected_Ability_Extent)) +
+  geom_bar() +
+  facet_wrap(~Health_Affected_Ability) + 
+  scale_fill_manual(values = c("#0072B2", "#009E73", "#D55E00")) +
+  scale_x_continuous(limits = c(-1,10), breaks = seq(0,10, by = 2)) + 
+  labs(x = "ACE Score", y = "Count", 
+       title = "ACE Score's Impact on Health Ability")  + 
+  theme(legend.position = "top") +  
+  theme(plot.title = element_text(hjust = 0.5))
 ```
 
