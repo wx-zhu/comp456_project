@@ -277,7 +277,7 @@ df_kid_behavior %>%
   ggplot(aes(x = ACE_score, fill = Health_Affected_Ability_Extent)) +
   geom_bar() +
   facet_wrap(~Health_Affected_Ability) + 
-  scale_fill_manual(values = c("#0072B2", "#009E73", "#D55E00")) +
+  scale_fill_manual(values = c( "#D55E00","#0072B2", "#009E73")) +
   scale_x_continuous(limits = c(-1,10), breaks = seq(0,10, by = 2)) + 
   labs(x = "ACE Score", y = "Count", 
        title = "ACE Score's Impact on Health Ability")  + 
