@@ -131,14 +131,15 @@ colnames(df_kid_mental_indirect)[which(names(df_kid_mental_indirect) == "K2Q41C"
 ```{r}
 # K2Q35A_1_YEARS: How old was this child when a doctor or other health care provider FIRST told you that they had Autism, ASD, Asperger's Disorder or PDD?
 df_kid_mental_indirect %>% 
-  filter(!is.na(K2Q35A_1_YEARS)) %>% 
+  drop_na(K2Q35A_1_YEARS) %>% 
   ggplot(aes(x = factor(ACE_score), y = factor(K2Q35A_1_YEARS), color = Development_Delay)) +
   geom_count() +
   scale_color_manual(values = c("#0072B2", "#009E73", "#D55E00")) +
   labs(x = "ACE Score", y = "Age at Initial Autism Diagnosis") +
   theme_minimal()  + 
   theme(legend.position = "right") + 
-  geom_rect(aes(xmin = 3.7, xmax = 10.3, ymin = 0.6, ymax = 6.4), color = "red",alpha = 0.00) + 
+  geom_rect(aes(xmin = 4.7, xmax = 10.3, ymin = 0.6, ymax = 6.4), color = "red",alpha = 0.00) + 
+  theme(legend.position = "top") + 
   labs(title = "ACE Score vs. Autism Diagnosis Age", 
        subtitle = "Red Box: Early Autism Diagnosis Among Children with Higher ACE Scores")
 ```
@@ -146,13 +147,27 @@ df_kid_mental_indirect %>%
 ```{r}
 # K2Q37A ~ C: speech disorder
 df_kid_mental_indirect %>%
-  filter(!is.na(Speech_Disorder)) %>%
+  drop_na(Speech_Disorder) %>%
+  filter(ACE_score>= 4) %>% 
+  ggplot(aes(x = ACE_score, group = Speech_Disorder, fill = Speech_Disorder)) +
+  geom_density(alpha = 0.7) +
+ # geom_vline(xintercept = 4, color = "#009E73") +
+ # annotate("text", x= 7, y = 2.3, label= "Number of kids: 154", color = "#009E73") + 
+  scale_x_continuous(limits = c(3.5,10), breaks = seq(4, 10, by = 2)) +
+  scale_fill_manual(values = c("#0072B2", "#D55E00")) +
+  theme(legend.position = "top") +
+  labs(x = "ACE Score", y = "Speech Disorder", 
+       title = "ACE Score's Impact on Speech Disorder")
+
+df_kid_mental_indirect %>%
+  drop_na(Speech_Disorder) %>%
   ggplot(aes(x = ACE_score, y = Speech_Disorder, group = Speech_Disorder, fill = Speech_Disorder)) +
   geom_boxplot() +
  # geom_vline(xintercept = 4, color = "#009E73") +
  # annotate("text", x= 7, y = 2.3, label= "Number of kids: 154", color = "#009E73") + 
   scale_x_continuous(limits = c(0,10), breaks = seq(0, 10, by = 2)) +
   scale_fill_manual(values = c("#0072B2", "#D55E00")) +
+  theme(legend.position = "top") +
   labs(x = "ACE Score", y = "Speech Disorder", 
        title = "ACE Score's Impact on Speech Disorder")
 ```
@@ -165,6 +180,7 @@ df_kid_mental_indirect %>%
   geom_bar() +
   scale_x_continuous(limits = c(-1,10), breaks = seq(0,10, by = 2)) + 
   scale_fill_manual(values = c("#0072B2", "#009E73", "#D55E00")) +
+  theme(legend.position = "top") +
   labs(x = "ACE Score", y = "Intellectual Disability", 
        title = "ACE Score's Impact on Intellectual Disability")
 ```
@@ -187,6 +203,7 @@ df_kid_physical <- df_kid_physical %>%
 
 # Create a 2D histogram
 df_kid_physical %>%
+  filter(ACE_score >= 4)%>%
   ggplot(aes(x = factor(ACE_score), y = Preventive_Dental_Visit)) +
   geom_bin2d() +
   scale_fill_gradient(low = "#000000", high = "#FFB000") + 
@@ -273,12 +290,13 @@ df_kid_behavior %>%
 
 # Create a bar plot
 df_kid_behavior %>%
+  filter(ACE_score >= 4) %>% 
   drop_na(Health_Affected_Ability, Health_Affected_Ability_Extent) %>% 
   ggplot(aes(x = ACE_score, fill = Health_Affected_Ability_Extent)) +
   geom_bar() +
   facet_wrap(~Health_Affected_Ability) + 
   scale_fill_manual(values = c( "#D55E00","#0072B2", "#009E73")) +
-  scale_x_continuous(limits = c(-1,10), breaks = seq(0,10, by = 2)) + 
+  scale_x_continuous(limits = c(3.5,10), breaks = seq(4,10, by = 2)) + 
   labs(x = "ACE Score", y = "Count", 
        title = "ACE Score's Impact on Health Ability")  + 
   theme(legend.position = "top") +  
