@@ -8,10 +8,12 @@ This project delves into exploring the connections among Adverse Childhood Exper
 - Lanying Wang
 
 ## Repository Structure
-Data: Contains datasets used in the analysis. Larger datasets are linked in the README.
-Code: Includes scripts for data cleaning, analysis, and visualization.
-Visualizations: Hosts visual representations of the findings.
-Documentation: Holds project-related documentation, including project overview, methodologies, and references.
+- Data: Contains datasets used in the analysis. Larger datasets are linked in the README.
+
+- FP1: Includes initial investigation of the project.
+
+- FP2: Includes code of main visualizations we created
+
 
 ## Reproducing the Work
 To replicate our analysis, follow these steps:
