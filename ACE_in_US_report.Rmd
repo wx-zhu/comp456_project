@@ -1,0 +1,317 @@
+---
+title: "Adverse Childhood Experience in US: A Data Science Approach"
+author: "Wenxuan Zhu & Lanying Wang"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(tidymodels)
+library(ggpubr) # plot
+library(caTools) # For sampling the dataset
+library(randomForest) # For implementing random forest algorithm
+library(naniar) # identify where NA is
+library(haven) # sas7bdat file
+library(viridis)  # Load the viridis color palette, which is color-blind friendly
+library(plotly)
+
+theme_set(theme_minimal())
+
+df <- read_csv("data/topical_data_cleaned.csv")
+
+df_screener <- read_sas("data/nsch_2021_screener.sas7bdat")
+```
+
+## Introduction
+*Lanying*
+ACE scores are a measure of the number of adverse experiences a person had during their childhood, such as abuse, neglect, or household dysfunction. Understanding this relationship is important because it can provide insights into how childhood experiences may be associated with the severity of mental health issues in children.
+
+
+### Research Questions
+
+*Lanying*
+
+### NA values
+The survey data contains numerous missing values, significantly limiting its potential for robust modeling. Consequently, our approach has centered on leveraging visualization techniques as an effective strategy to tackle this issue. By emphasizing visual representation, we aim to compensate for the data's limitations, allowing us to glean insights and patterns despite the missing values, ensuring a comprehensive understanding of the problem.
+
+```{r echo=FALSE, warning=FALSE, fig.align='center', fig.height= 4, fig.width=6}
+# How many NA?
+# n_miss(df) # 5197288
+# prop_miss(df) # 0.4047034
+# Which variables are affected?
+# df %>% is.na() %>% colSums() 
+# Which variables contain the most missing variables?
+gg_miss_var(df, show_pct = TRUE) + 
+  labs(title = "Look at all the missing ones :(")
+```
+
+### Data Cleaning
+*Lanying*
+
+## Results: 
+### Demongraphic 
+*Lanying*
+
+### Kid's mental health: ADD/ADHD, depression, and anxiety Boxplot
+This visualization aims to delve into the correlation between the severity of children's mental health conditions—such as ADD/ADHD, depression, and anxiety—and their Adverse Childhood Experiences (ACE) scores. What's strikingly evident is the consistent trend: children grappling with severe mental health issues consistently demonstrate substantially higher ACE scores compared to their peers with milder or moderate challenges, notably prevalent in cases of depression and anxiety. This significant finding strongly hints at a potential connection, indicating that a greater occurrence of adverse childhood experiences might play a role in the escalation of more severe mental health issues among children. This observation underscores the urgency for targeted interventions addressing childhood adversities to potentially mitigate the escalation of severe mental health conditions among the youth.
+
+```{r include=FALSE}
+# Recode severity levels
+df_kid_mental <- df %>%
+  select(ACE_score, K2Q31C, K2Q32C, K2Q33C) %>%
+  mutate_at(vars(K2Q31C, K2Q32C, K2Q33C), # ADD/ADHD, Depression, Anxiety
+    ~ ifelse(. == "1", "Mild",
+      ifelse(. == "2", "Moderate",
+        ifelse(. == "3", "Severe", NA))))
+```
+
+```{r echo=FALSE, fig.alt="The figure consists of multiple box plots, each representing one of the three types of kids' mental health problems: ADD/ADHD, depression, and anxiety. On the x-axis, we have the severity levels of these problems: mild, moderate, severe, and NA. The y-axis represents the range of ACE scores, which varies from 0 to 10. From the plot, across all three mental health problem types, children with severe mental health issues consistently exhibit significantly higher ACE scores compared to those with mild or moderate issues. This pattern underscores a strong association between the severity of mental health problems in children and their ACE scores, emphasizing the potential impact of adverse childhood experiences on mental health outcomes.", fig.align='center'}
+# Define color-blind friendly colors
+cb_color <- c("#0072B2", "#009E73", "#D55E00")
+
+# Create the bar plot
+add <- df_kid_mental %>% 
+  na.omit(K2Q31C) %>% 
+  ggplot(aes(y = K2Q31C, x = ACE_score, fill = K2Q31C)) +
+  geom_boxplot() +
+  # facet_wrap(~K2Q31C, scales = "free_x", nrow = 1) +  # Facet by mental problem
+  scale_fill_manual(values = cb_color) +
+  scale_x_continuous(limits = c(0,10), breaks = seq(0, 10, by = 2)) +
+  labs(
+    y = "ADD/ADHD",
+    x = "ACE Score",
+    fill = "Severity"
+  ) 
+
+dep <- df_kid_mental %>% 
+  na.omit(K2Q32C) %>% 
+  ggplot(aes(y = K2Q32C, x = ACE_score, fill = K2Q32C)) +
+  geom_boxplot() +
+  # facet_wrap(~K2Q32C, scales = "free_x", nrow = 1) +  # Facet by mental problem
+  scale_fill_manual(values = cb_color) +
+  scale_x_continuous(limits = c(0,10), breaks = seq(0, 10, by = 2)) +
+  labs(
+    y = "Depression",
+    x = "ACE Score",
+    fill = "Severity"
+  ) 
+
+anx <- df_kid_mental %>% 
+  na.omit(K2Q33C) %>% 
+  ggplot(aes(y = K2Q33C, x = ACE_score, fill = K2Q33C)) +
+  geom_boxplot() +
+  # facet_wrap(~K2Q33C, scales = "free_x", nrow = 1) +  # Facet by mental problem
+  scale_fill_manual(values = cb_color) +
+  scale_x_continuous(limits = c(0,10), breaks = seq(0, 10, by = 2)) +
+  labs(
+    y = "Anxiety",
+    x = "ACE Score",
+    fill = "Severity"
+  ) 
+
+ggarrange(add, dep, anx, 
+          common.legend = TRUE,
+          legend = "right",
+          labels = c("A", "B", "C"),
+          ncol = 1, nrow = 3)
+```
+
+
+### Kid's Develpmental Delay
+Developmental delays encompass a range of delays in reaching milestones across cognitive, social, or motor skills, impacting a child's growth and learning pace. Early identification and intervention are pivotal in supporting children with developmental delays to maximize their potential and overall quality of life. However, children experiencing developmental delays often face adverse childhood experiences (ACEs), which can exacerbate their challenges. According to the stack bar plots below, a positive correlation exists between higher ACE scores and more severe developmental delay. In addition, previous studies have shown that children diagnosed with autism spectrum disorder (ASD) often have developmental delays. To the American Academy of Pediatrics (AAP) recommendation that developmental and behavioral screening for all children during regular well-child visits before 30 months, we chose autism first diagnosed under age four as a threshold and created visualization part B. Among kids who are first diagnosed under age 4, higher ACE score values are associated with more moderate and severe developmental delay.
+
+```{r include=FALSE}
+df_kid_mental_indirect <- df %>%
+  select(ACE_score, K2Q35A_1_YEARS, K2Q36A:K2Q36C, K2Q37A:K2Q37C, K2Q40A:K2Q40C, K2Q41A:K2Q41C, K2Q42A:K2Q42C, K2Q60A:K2Q60C) %>%
+  mutate_at(vars(K2Q36C, K2Q37C, K2Q40C, K2Q41C, K2Q42C, K2Q60C), 
+    ~ ifelse(. == "1", "Mild",
+      ifelse(. == "2", "Moderate",
+        ifelse(. == "3", "Severe", NA)))) %>% 
+  mutate_at(vars(K2Q36A, K2Q37A, K2Q40A, K2Q41A, K2Q42A, K2Q60A), 
+    ~ ifelse(. == "1", "Yes",
+      ifelse(. == "2", "No", NA)))
+
+colnames(df_kid_mental_indirect)[which(names(df_kid_mental_indirect) == "K2Q36C")] <- "Development_Delay"
+colnames(df_kid_mental_indirect)[which(names(df_kid_mental_indirect) == "K2Q37A")] <- "Speech_Disorder"
+colnames(df_kid_mental_indirect)[which(names(df_kid_mental_indirect) == "K2Q60C")] <- "Intellectual_Disability"
+colnames(df_kid_mental_indirect)[which(names(df_kid_mental_indirect) == "K2Q41C")] <- "Diabetes"
+```
+
+```{r echo=FALSE, fig.align='center', fig.height= 5, fig.width=10, message=FALSE, warning=FALSE}
+cb_color <- c("#0072B2", "#009E73", "#D55E00", "darkgrey")
+
+df_kid_mental_indirect_bar <- df_kid_mental_indirect %>% 
+  group_by(ACE_score, Development_Delay) %>% # First we'll create counts for each group
+  summarise(number_cases = n()) %>% 
+  group_by(ACE_score) %>% # Group new datafram by class
+  mutate(ACE_score_cases = sum(number_cases),
+         proportion = number_cases/ACE_score_cases) # Create total counts
+
+plot_Development_Delay <- df_kid_mental_indirect_bar %>% 
+  ggplot( aes(x=ACE_score, y=proportion, fill=Development_Delay)) + 
+  geom_bar(stat="identity", position="stack") +
+  geom_text(aes(x=ACE_score, y=0.05, label=ACE_score_cases), 
+            size=3, colour="white", inherit.aes=FALSE) + 
+  scale_fill_manual(values = cb_color) + 
+  scale_x_continuous(limits = c(0,10), breaks = seq(0, 10, by = 2)) +
+  labs(title = "ACE Score VS. Proportion of Kids' Development Delay") + 
+  theme(legend.position = "right")
+
+df_kid_mental_indirect_bar7 <- df_kid_mental_indirect %>% 
+  filter(K2Q35A_1_YEARS < 4 ) %>% 
+  group_by(ACE_score, Development_Delay) %>% # First we'll create counts for each group
+  summarise(number_cases = n()) %>% 
+  group_by(ACE_score) %>% # Group new datafram by class
+  mutate(ACE_score_cases = sum(number_cases),
+         proportion = number_cases/ACE_score_cases) # Create total counts
+
+plot_Development_Delay_Autism <- df_kid_mental_indirect_bar7 %>% 
+  ggplot( aes(x=ACE_score, y=proportion, fill=Development_Delay)) + 
+  geom_bar(stat="identity", position="stack") +
+  geom_text(aes(x=ACE_score, y=0.05, label=ACE_score_cases), 
+            size=3, colour="white", inherit.aes=FALSE) + 
+  scale_fill_manual(values = cb_color) + 
+  scale_x_continuous(limits = c(0,10), breaks = seq(0, 10, by = 2)) +
+  labs(title = "Among Kids FIRST Diagnosed as Autism Under Age 4", 
+       subtitle = "ACE Score VS. Proportion of Kids' Development Delay") + 
+  theme(legend.position = "right")
+
+ggarrange(plot_Development_Delay, plot_Development_Delay_Autism, 
+          common.legend = TRUE,
+          legend = "bottom",
+          labels = c("A", "B"))
+```
+
+
+## Kids' Physical Health
+In our pursuit of understanding the impact of ACE scores on children's physical health, we've employed the Health Ability measurement within the dataset. This metric gauges the extent to which a child's health conditions or issues have influenced their ability to engage in activities typical for their age group over the past year. Our analysis, depicted in the plot below, vividly showcases a compelling trend: as ACE scores escalate, there's a discernible correlation with more pronounced limitations in Health Ability among children. This is evidenced by a notable increase in the proportion of responses indicating frequent hindrances—'always,' 'usually,' and 'sometimes'—signifying a direct link between higher ACE scores and heightened challenges in children's physical well-being.
+
+```{r include=FALSE}
+df_kid_behavior <- df %>%
+  select(ACE_score, BULLIED_R, BULLY, ERRANDALONE, HCABILITY, HCEXTENT, DISTRACTED) %>%
+  mutate_at(vars(BULLIED_R, BULLY), 
+    ~ case_when(
+      . == "1" ~ "Never (in the past 12 months)",
+      . == "2" ~ "1-2 times (in the past 12 months)",
+      . == "3" ~ "1-2 times per month",
+      . == "4" ~ "1-2 times per week",
+      . == "5" ~ "Almost every day",
+      TRUE ~ as.character(.))) %>% 
+  mutate_at(vars(ERRANDALONE), 
+    ~ case_when(
+      . == "1" ~ "Yes",
+      . == "2" ~ "No",
+      TRUE ~ as.character(.))) %>% 
+  mutate_at(vars(HCABILITY), 
+    ~ case_when(
+      . == "1" ~ "No health condition",
+      . == "2" ~ "Never",
+      . == "3" ~ "Sometimes",
+      . == "4" ~ "Usually",
+      . == "5" ~ "Always",
+      TRUE ~ as.character(.))) %>% 
+  mutate_at(vars(HCEXTENT), 
+    ~ case_when(
+      . == "1" ~ "Very little",
+      . == "2" ~ "Somewhat",
+      . == "3" ~ "A great deal",
+      TRUE ~ as.character(.))) %>% 
+  mutate_at(vars(DISTRACTED), 
+    ~ case_when(
+      . == "1" ~ "Always",
+      . == "2" ~ "Most of the time",
+      . == "3" ~ "About half the time",
+      . == "4" ~ "Sometimes",
+      . == "5" ~ "Never",
+      TRUE ~ as.character(.)))
+  
+colnames(df_kid_behavior)[which(names(df_kid_behavior) == "BULLIED_R")] <- "Bullied_by_others"
+colnames(df_kid_behavior)[which(names(df_kid_behavior) == "BULLY")] <- "Bully_others"
+colnames(df_kid_behavior)[which(names(df_kid_behavior) == "ERRANDALONE")] <- "Difficulty_Doing_Errands_Alone"
+colnames(df_kid_behavior)[which(names(df_kid_behavior) == "HCABILITY")] <- "Health_Affected_Ability"
+colnames(df_kid_behavior)[which(names(df_kid_behavior) == "HCEXTENT")] <- "Health_Affected_Ability_Extent"
+colnames(df_kid_behavior)[which(names(df_kid_behavior) == "HCABILITY")] <- "Health_Affected_Ability_Often"
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, fig.align='center'}
+# Health_Affected_Ability
+df_kid_behavior_bar <- df_kid_behavior %>% 
+  drop_na(Health_Affected_Ability) %>%
+ # filter(ACE_score >= 4) %>% 
+  group_by(ACE_score, Health_Affected_Ability) %>% # First we'll create counts for each group
+  summarise(number_cases = n()) %>% 
+  group_by(ACE_score) %>% # Group new datafram by class
+  mutate(ACE_score_cases = sum(number_cases),
+         proportion = number_cases/ACE_score_cases) # Create total count
+
+# Define the desired order for the legend
+new_order <- c("Always", "Usually", "Sometimes", "Never", "No health condition")
+
+# Reorder the levels of Health_Affected_Ability
+df_kid_behavior_bar <- df_kid_behavior_bar %>%
+  mutate(Health_Affected_Ability = factor(Health_Affected_Ability, levels = new_order))
+
+# Plotting
+df_kid_behavior_bar %>%
+  ggplot(aes(x = ACE_score, y = proportion, fill = Health_Affected_Ability)) +
+  geom_bar(stat = "identity", position = "stack") +
+  geom_text(aes(x = ACE_score, y = 0.05, label = ACE_score_cases), 
+            size = 3, colour = "white", inherit.aes = FALSE) + 
+  scale_fill_manual(values = c("#D55E00", "#FFC20A", "#4B0092", "#0072B2", "#009E73")) +
+  scale_x_continuous(limits = c(-1, 10), breaks = seq(0, 10, by = 2)) + 
+  labs(x = "ACE Score", y = "Count", 
+       title = "ACE Score's Impact on Health Ability")  + 
+  theme(legend.position = "right") +  
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+
+## Conclusion 
+
+The research conducted within this project has unveiled compelling insights into the intricate relationship between Adverse Childhood Experiences (ACEs) and their profound impact on various facets of children's lives. Through meticulous data analysis and visualization techniques, we've unearthed these correlations, shedding light on the substantial influence of ACEs and family factors  on children's well-being. *Lanying*
+
+Our comprehensive analysis has shed light on the direct correlation between higher ACE scores and the amplified challenges children face across mental health, developmental milestones, and physical well-being. Notably, the prevalence of ACEs has shown a strong association with elevated risks of severe mental health issues, developmental delays, and notable limitations in children's physical health abilities.
+
+However, our analysis grappled with several limitations inherent in the data. These include highly skewed data, potential inaccuracies in parental perspectives, possible biases in teacher-reported data, and the likelihood of underreported severity from parents who have abused children, impacting survey responses. Despite these challenges, our project underscores the pressing need for early interventions and support systems targeting ACEs to mitigate their detrimental effects on children's lives.
+
+Recognizing the profound impact of ACEs on children's health, tailored strategies and policies are imperative to reduce ACE occurrences and provide comprehensive support to affected children and families. The compelling evidence from other studies linking higher ACE scores during childhood to increased risks of adverse outcomes—such as mental health disorders, chronic diseases, and behavioral problems—underscores the urgency for proactive measures and robust policies.
+
+In conclusion, this project serves as a catalyst for further research and advocacy, highlighting the urgency of addressing ACEs to ensure the holistic well-being of children, fostering environments conducive to their healthy development, and ultimately building resilient communities.
+
+
+
+## Contribution
+
+- Lanying: *Lanying*
+
+- Wenxuan: Played a substantial role in crafting diverse visualizations encompassing NA plots, children's mental health correlations, developmental delay analyses, physical health insights, and the conclusive elements of the project. Contributed significantly to the formulation of project conclusions, acknowledging limitations through comprehensive literature referencing, refining final presentations, and ensuring report formatting and revising sections. Contributed significantly to the GitHub repository, focusing on meticulous documentation including a README that succinctly described the project. Additionally, actively participated in data cleaning and the project introduction phase. Maintained consistent schedules for meetings with Lanying to ensure collaborative progress and cohesion. :)
+
+
+
+
+
+### Reference
+
+<div id="refs"></div>
+
+Bureau, U. C. (2023, September 28). NSCH datasets. Census.gov. https://www.census.gov/programs-surveys/nsch/data/datasets.html
+
+
+Centers for Disease Control and Prevention. (n.d.). Adverse childhood experiences (aces). Centers for Disease Control and Prevention. https://www.cdc.gov/vitalsigns/aces/index.html
+
+
+Hughes, K., Bellis, M. A., Hardcastle, K. A., Sethi, D., Butchart, A., Mikton, C., Jones, L., & Dunne, M. P. (2017). The effect of multiple adverse childhood experiences on health: A systematic review and meta-analysis. The Lancet Public Health, 2(8). https://doi.org/10.1016/s2468-2667(17)30118-4
+
+
+Hughes, K., Lowey, H., Quigg, Z., & Bellis, M. A. (2016). Relationships between adverse childhood experiences and adult mental well-being: Results from an english national household survey. BMC Public Health, 16(1). https://doi.org/10.1186/s12889-016-2906-3
+
+
+Webster, E. M. (2022). The impact of adverse childhood experiences on health and development in young children. Global Pediatric Health, 9. https://doi.org/10.1177/2333794x221078708
+
+
+Williams, K., & Finch, B. K. (2019). Adverse childhood experiences, early and nonmarital fertility, and Women’s Health at Midlife. Journal of Health and Social Behavior, 60(3), 309–325. https://doi.org/10.1177/0022146519868842 
+
+
