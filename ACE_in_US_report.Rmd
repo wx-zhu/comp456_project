@@ -2,7 +2,13 @@
 title: "Adverse Childhood Experience in US: A Data Science Approach"
 author: "Wenxuan Zhu & Lanying Wang"
 date: "`r Sys.Date()`"
-output: html_document
+output: 
+  html_document:
+    theme: flatly
+    toc: true
+    toc_float:
+      collapsed: false
+    code_download: true
 ---
 
 ```{r setup, include=FALSE}
@@ -28,10 +34,12 @@ library(ggridges)
 library(haven)
 library(usmap)
 library(viridis)
+library(ggpubr)
+
 
 theme_set(theme_minimal())
 
-df <- read_csv("~/Desktop/comp 456/topical_data_cleaned.csv")
+df <- read_csv("data/topical_data_cleaned.csv")
 
 df_screener <- read_sas("data/nsch_2021_screener.sas7bdat")
 ```
@@ -58,13 +66,14 @@ We formulate our questions through expert consultation and literature review. Th
 ### NA values
 The survey data contains numerous missing values, significantly limiting its potential for robust modeling. Consequently, our approach has centered on leveraging visualization techniques as an effective strategy to tackle this issue. By emphasizing visual representation, we aim to compensate for the data's limitations, allowing us to glean insights and patterns despite the missing values, ensuring a comprehensive understanding of the problem.
 
-```{r echo=FALSE, warning=FALSE, fig.align='center', fig.height= 4, fig.width=6}
+```{r echo=FALSE, warning=FALSE, fig.align='center', fig.height= 4, fig.width=6, fig.align='center'}
 # How many NA?
 # n_miss(df) # 5197288
 # prop_miss(df) # 0.4047034
 # Which variables are affected?
 # df %>% is.na() %>% colSums() 
 # Which variables contain the most missing variables?
+library(naniar)
 gg_miss_var(df, show_pct = TRUE) + 
   labs(title = "Look at all the missing ones :(")
 ```
@@ -74,7 +83,10 @@ Motivated by our research goals, we pursued a quantitative measurement for ACE, 
 
 Given the considerable volume of missing data present in our dataset, we implemented a strategy to filter out NA (missing) values for the variables used in each visualization. This approach was adopted to ensure that our visualizations retained as much informative data as possible while addressing the challenge posed by the significant number of missing values in the dataset.
 
-## Results: 
+
+Given the considerable volume of missing data present in our dataset, we implemented a strategy to filter out NA (missing) values for the variables used in each visualization. This approach was adopted to ensure that our visualizations retained as much informative data as possible while addressing the challenge posed by the significant number of missing values in the dataset.
+
+## Results
 ### Demongraphic 
 In the initial phases of our investigation, we delved into the demographic landscape using a variety of visualization tools, such as histograms and the application of the chi-squared test. Through this exploration, we are able to find actors that exhibit a stronger correlation with ACE scores compared to others.
 
@@ -157,7 +169,7 @@ Using the code above, the dataset is trimmed down to include only specific varia
 For example, the A1_MARITAL and A2_MARITAL variables, representing marital status, are recoded so that "1" being "Married," "2" being "Not married, but living with a partner," and so on. Other variables are recoded in similar ways. Finally, the variable named "K11Q43R" is renamed to "Times_Move" for clarity.
 
 
-```{r}
+```{r echo=FALSE, fig.align='center'}
 rename_data %>%
   filter(!is.na(A1_MARITAL)) %>%
   ggplot(aes(x = ACE_score, y = as.factor(A1_MARITAL), group = as.factor(A1_MARITAL), fill = as.factor(A1_MARITAL))) +
@@ -174,7 +186,7 @@ rename_data %>%
 
 The box plot illustrates the relationship between ACE scores and marital status among children. Notably, the plot reveals that children with caregivers categorized as "widowed," "separated," and "divorced" exhibit higher cumulative ACE scores compared to those with other marital statuses. Interestingly, among all marital statuses, the box representing "married" caregivers shows the lowest ACE scores. This visual representation effectively highlights the variability in ACE scores across different marital status categories. 
 
-```{r warning=FALSE }
+```{r echo=FALSE, warning=FALSE, fig.align='center'}
 cb_color <- c("#0072B2", "#009E73", "#D55E00", "darkgrey","#785EF0", "#FFB000" )
 
 ace_marital_data <- rename_data %>% 
@@ -203,7 +215,7 @@ ace_marital_data %>%
 
 The data is grouped by ACE_score_category to address smaller case counts in higher ACE score categories. The results indicate a significant decrease in the proportion of "married" caregivers as ACE scores increase from 0 to 5+. Notably, the proportion of caregivers categorized as "divorced" exhibits a general increasing trend across ACE score categories. Furthermore, the proportion of caregivers who have never been married also shows an upward trend with increasing ACE scores, and there is an observed increase in the proportion of caregivers who are widowed. These trends provide valuable insights into how marital status distribution varies across different ACE score categories, highlighting notable shifts in proportions for specific marital statuses as ACE scores increase.
 
-```{r}
+```{r echo=FALSE, fig.align='center', warning=FALSE}
 rename_data %>%
   filter(!is.na(A1_RELATION)) %>%
   ggplot(aes(x = ACE_score, y = A1_RELATION, group = A1_RELATION, fill = A1_RELATION)) +
@@ -219,7 +231,7 @@ rename_data %>%
 The box plot visualizes the relationship between ACE scores and the type of caregiver relationship. It shows that the "foster parents" category exhibits a shift toward higher ACE scores, indicating a higher mean ACE score for children with foster parents. In contrast, the "biological or adoptive parent" category displays a box with lower ACE scores, suggesting a lower mean ACE score for children with biological or adoptive parents. The distinct positioning of these boxes provides a clear visual representation of the varying ACE scores based on the type of caregiver relationship.
 
 
-```{r warning=FALSE }
+```{r echo=FALSE, warning=FALSE, fig.align='center'}
 cb_color <- c("#0072B2", "#009E73", "#D55E00", "darkgrey", "#785EF0", "#FFB000")
 
 ace_Relation_data <- rename_data %>%
@@ -250,7 +262,7 @@ The stacked bar plot visualizes the relationship between ACE scores and caregive
 The proportion of cases where caregivers are "Biological or Adoptive Parents" decreases as ACE scores escalate. Instances with "Grandparent" caregivers demonstrate an increase in proportion with higher ACE scores.The proportion of cases involving caregivers categorized as "Other: Relative" exhibits a notable increase with rising ACE scores. The category "Foster Parent" show a significant increase in proportion with higher ACE scores. Overall, the visual representation provides valuable insights into the correlation between caregiver relationships and ACE scores, emphasizing notable patterns and distinctions.
 
 
-```{r}
+```{r echo=FALSE, fig.align='center'}
 rename_data %>%
   filter(!is.na(FOODSIT)) %>%
   ggplot(aes(x = ACE_score, y = factor(FOODSIT, levels = c("Always Affordable", "Always Enough, Not Always Ideal", "Sometimes Not Enough", "Often Not Enough")), group = FOODSIT, fill = FOODSIT)) +
@@ -265,7 +277,7 @@ rename_data %>%
 ```
 The generated box plot effectively visualizes the relationship between ACE scores and domestic food situations. The plot reveals a noteworthy trend: as the food situation worsens, indicating less affordability, the ACE scores shift to the right. This rightward shift implies higher mean ACE scores and an accumulation of ACE scores among individuals facing more challenging domestic food situations.
 
-```{r, fig.height=7}
+```{r echo=FALSE, fig.height=7, warning=FALSE,fig.align='center'}
 rename_data <- mutate(rename_data, High_ACE = ifelse(ACE_score > 4, "High", "Not High"))
 
 # Calculate the proportion of high ACE scores for each family structure and family size
@@ -290,7 +302,7 @@ The bar plot above provides valuable insights into the relationship between fami
 
 Interestingly, the influence of family size on ACE scores appears less pronounced, as it does not exhibit a clear pattern of impact across various family structures. Instead, family size serves as a useful factor for distinguishing cases within each family structure category, particularly filling in gaps when certain family structures lack representation in the data
 
-```{r}
+```{r echo=FALSE, fig.align='center'}
 rename_data %>%
   filter(!is.na(HOUSE_GEN)) %>%
   ggplot(aes(x = ACE_score, y = HOUSE_GEN, group = HOUSE_GEN, fill = HOUSE_GEN)) +
@@ -305,7 +317,7 @@ rename_data %>%
 ```
 The box plot visually compares ACE scores across different house generation categories. Notably, the "Other" category stands out significantly from the rest, representing children born in the US with parents not listed. This group exhibits higher ACE scores, suggesting an elevated cumulative mean. The distinctiveness of the "Other" category underscores the potential impact of specific household characteristics on ACE scores, providing valuable insights for further exploration and analysis.
 
-```{r}
+```{r echo=FALSE, warning= FALSE, fig.align='center'}
 Genmove_data <- na.omit(rename_data[, c("ACE_score", "Times_Move", "HOUSE_GEN")])
 
 colnames(Genmove_data)[which(names(Genmove_data) == "HOUSE_GEN")] <- "House_Generation"
@@ -324,7 +336,7 @@ ggplot(Genmove_data, aes(x = ACE_score, y = fct_rev(as.factor(Times_Move)),
 The plot illustrates the influence of household generation and the frequency of residential moves on the distribution of ACE scores. A positive correlation is observed between the number of times an individual has moved and their ACE scores, showing by density ridges of scores shifting to the right as the frequency of moves increases.
 Regarding house generations, distinctions emerge with the "Other" category, specifically referring to cases where the "Child is born in the United States, parents are not listed," exhibiting the most substantial differences from the remaining categories as it corresponds to higher ACE scores throughout the graph.
 
-```{r}
+```{r echo=FALSE, warning= FALSE, fig.align='center'}
 Movecut_data <- na.omit(rename_data[, c("ACE_score", "Times_Move", "CUTHOURS")])
 
 ggplot(Movecut_data, aes(x = ACE_score, y = fct_rev(as.factor(Times_Move)), 
@@ -339,7 +351,7 @@ ggplot(Movecut_data, aes(x = ACE_score, y = fct_rev(as.factor(Times_Move)),
 
 The plot provides insights into the relationship between caregivers cutting down hours due to a child's health ("CUTHOURS"), the frequency of residential moves ("Times_Move"), and the distribution of ACE scores among children. Similar as the previous graph, a positive correlation is evident between the number of residential moves and ACE scores. In terms of caregivers cutting down hours ("CUTHOURS"), children with caregivers who answered "yes" exhibit a significantly higher distribution of ACE scores compared to those with caregivers who answered "no." This implies that the decision to cut down hours due to a child's health is associated with more risk factors of ACE scores. 
 
-```{r}
+```{r include=FALSE}
 state_code_to_name <- c(
   "01" = "alabama", 
   "02" = "alaska", 
@@ -398,7 +410,7 @@ topical_data_statename <- merge(df, data.frame(StateCode = names(state_code_to_n
 
 ```
 
-```{r}
+```{r echo=FALSE, warning= FALSE, fig.align='center'}
 
 state_names <- data.frame(StateName = tolower(state.name), Abbreviation = state.abb)
 
@@ -442,7 +454,7 @@ ggplot() +
 
 The map above illustrates the mean ACE scores across states but does not effectively capture nuanced differences due to the prevalence of zero and one ACE scores, which significantly influences the mean values. The large quantity of these low scores tends to skew the overall mean, resulting in less noticeable distinctions across states. 
 
-```{r}
+```{r echo=FALSE, warning= FALSE, fig.align='center'}
 
 state_names <- data.frame(StateName = tolower(state.name), Abbreviation = state.abb)
 
@@ -485,14 +497,14 @@ ggplot() +
 ```
 Therefore, we revise the graph by filtering the ACE scores to only include cases with scores greater than 4. Upon examination, the graph highlights New Jersey as having the highest mean ACE score, indicating a higher prevalence of adverse childhood experience in this state. In contrast, California, New York, and Connecticut exhibit relatively low mean ACE scores, suggesting a comparatively lower prevalence of such experiences in these regions. This visualization provides a spatial perspective on the distribution of ACE scores, emphasizing regional disparities in the prevalence of adverse childhood experiences across the United States.
 
-```{r}
-data2021 <- read_sas('~/Desktop/comp 456/nsch_2021_topical.sas7bdat')
-data2020 <- read_sas('~/Desktop/comp 456/nsch_2020_topical.sas7bdat')
-data2019 <- read_sas('~/Desktop/comp 456/nsch_2019_topical.sas7bdat')
-data2018 <- read_sas('~/Desktop/comp 456/nsch_2018_topical.sas7bdat')
+```{r include=FALSE}
+data2021 <- read_sas('data/nsch_2021_topical.sas7bdat')
+data2020 <- read_sas('data/nsch_2020_topical.sas7bdat')
+data2019 <- read_sas('data/nsch_2019_topical.sas7bdat')
+data2018 <- read_sas('data/nsch_2018_topical.sas7bdat')
 ```
 
-```{r}
+```{r include=FALSE}
 data2021<-data2021 %>%
   mutate(
     ACE3 = ifelse(ACE3 == 2, 0, 1),
@@ -566,8 +578,7 @@ data2018<- data2018 %>%
 ```
 
 
-
-```{r}
+```{r include=FALSE}
 combined_data <- bind_rows(data2021, data2020, data2019, data2018)
 
 combined_data <- combined_data %>% distinct(FIPSST, YEAR, ACE_score , .keep_all = TRUE)
@@ -576,7 +587,7 @@ combined_data <- merge(combined_data, data.frame(StateCode = names(state_code_to
 ```
 
 
-```{r}
+```{r echo=FALSE, warning= FALSE, fig.align='center'}
 median_ace_by_state <- combined_data %>%
   filter(ACE_score > 4)%>%
   group_by(StateName, YEAR) %>%
@@ -615,7 +626,8 @@ animate(animation, nframes = 200, end_pause = 20)
 
 The animated visualization provides a dynamic overview of the general trend in ACE scores across states from 2018 to 2021. The color-coded map reveals the mean ACE score for each state, specifically focusing on cases where the ACE score exceeds 4. The darker colors on the map indicate higher mean ACE score, The animation highlights a discernible pattern: as the years progress, there is a noticeable increase in ACE scores across various states. This pattern potentially show the influence of covid-19.
 
-### Kid's mental health: ADD/ADHD, depression, and anxiety Boxplot
+
+### Kid's mental health
 This visualization aims to delve into the correlation between the severity of children's mental health conditions—such as ADD/ADHD, depression, and anxiety—and their Adverse Childhood Experiences (ACE) scores. What's strikingly evident is the consistent trend: children grappling with severe mental health issues consistently demonstrate substantially higher ACE scores compared to their peers with milder or moderate challenges, notably prevalent in cases of depression and anxiety. This significant finding strongly hints at a potential connection, indicating that a greater occurrence of adverse childhood experiences might play a role in the escalation of more severe mental health issues among children. This observation underscores the urgency for targeted interventions addressing childhood adversities to potentially mitigate the escalation of severe mental health conditions among the youth.
 
 ```{r include=FALSE}
@@ -628,7 +640,7 @@ df_kid_mental <- df %>%
         ifelse(. == "3", "Severe", NA))))
 ```
 
-```{r echo=FALSE, fig.alt="The figure consists of multiple box plots, each representing one of the three types of kids' mental health problems: ADD/ADHD, depression, and anxiety. On the x-axis, we have the severity levels of these problems: mild, moderate, severe, and NA. The y-axis represents the range of ACE scores, which varies from 0 to 10. From the plot, across all three mental health problem types, children with severe mental health issues consistently exhibit significantly higher ACE scores compared to those with mild or moderate issues. This pattern underscores a strong association between the severity of mental health problems in children and their ACE scores, emphasizing the potential impact of adverse childhood experiences on mental health outcomes.", fig.align='center'}
+```{r echo=FALSE, fig.alt="The figure consists of multiple box plots, each representing one of the three types of kids' mental health problems: ADD/ADHD, depression, and anxiety. On the x-axis, we have the severity levels of these problems: mild, moderate, severe, and NA. The y-axis represents the range of ACE scores, which varies from 0 to 10. From the plot, across all three mental health problem types, children with severe mental health issues consistently exhibit significantly higher ACE scores compared to those with mild or moderate issues. This pattern underscores a strong association between the severity of mental health problems in children and their ACE scores, emphasizing the potential impact of adverse childhood experiences on mental health outcomes.", fig.align='center', fig.align='center'}
 # Define color-blind friendly colors
 cb_color <- c("#0072B2", "#009E73", "#D55E00")
 
@@ -683,7 +695,7 @@ ggarrange(add, dep, anx,
 ### Kid's Develpmental Delay
 Developmental delays encompass a range of delays in reaching milestones across cognitive, social, or motor skills, impacting a child's growth and learning pace. Early identification and intervention are pivotal in supporting children with developmental delays to maximize their potential and overall quality of life. However, children experiencing developmental delays often face adverse childhood experiences (ACEs), which can exacerbate their challenges. According to the stack bar plots below, a positive correlation exists between higher ACE scores and more severe developmental delay. In addition, previous studies have shown that children diagnosed with autism spectrum disorder (ASD) often have developmental delays. To the American Academy of Pediatrics (AAP) recommendation that developmental and behavioral screening for all children during regular well-child visits before 30 months, we chose autism first diagnosed under age four as a threshold and created visualization part B. Among kids who are first diagnosed under age 4, higher ACE score values are associated with more moderate and severe developmental delay.
 
-```{r include=FALSE}
+```{r include=FALSE, fig.align='center'}
 df_kid_mental_indirect <- df %>%
   select(ACE_score, K2Q35A_1_YEARS, K2Q36A:K2Q36C, K2Q37A:K2Q37C, K2Q40A:K2Q40C, K2Q41A:K2Q41C, K2Q42A:K2Q42C, K2Q60A:K2Q60C) %>%
   mutate_at(vars(K2Q36C, K2Q37C, K2Q40C, K2Q41C, K2Q42C, K2Q60C), 
@@ -749,7 +761,7 @@ ggarrange(plot_Development_Delay, plot_Development_Delay_Autism,
 ## Kids' Physical Health
 In our pursuit of understanding the impact of ACE scores on children's physical health, we've employed the Health Ability measurement within the dataset. This metric gauges the extent to which a child's health conditions or issues have influenced their ability to engage in activities typical for their age group over the past year. Our analysis, depicted in the plot below, vividly showcases a compelling trend: as ACE scores escalate, there's a discernible correlation with more pronounced limitations in Health Ability among children. This is evidenced by a notable increase in the proportion of responses indicating frequent hindrances—'always,' 'usually,' and 'sometimes'—signifying a direct link between higher ACE scores and heightened challenges in children's physical well-being.
 
-```{r include=FALSE}
+```{r include=FALSE, fig.align='center'}
 df_kid_behavior <- df %>%
   select(ACE_score, BULLIED_R, BULLY, ERRANDALONE, HCABILITY, HCEXTENT, DISTRACTED) %>%
   mutate_at(vars(BULLIED_R, BULLY), 
@@ -849,16 +861,16 @@ Recognizing the profound impact of ACEs on children's health, tailored strategie
 
 Our analysis grappled with several limitations inherent in the data, including highly skewed data, potential inaccuracies in parental perspectives, possible biases in teacher-reported data, and the likelihood of underreported severity from parents who have abused children, impacting survey responses. Our report also lacks a supportive model in presenting the causal relationship between ACE score and health issues. Some indications from the ACE score study are not addressed clearly. Additionally, we failed to find a concrete correlation between factors that we expected to be influential and ACE scores, as the dataset does not contain information on variables such as family income and money spent on healthcare services beyond basic care.
 
-Future Directions:
+
+## Future Directions
 - Explore the inclusion of additional variables in the dataset, such as family income, access to healthcare services, and other socioeconomic factors. This could provide a more comprehensive understanding of the various factors influencing ACE scores and their impact on health outcomes.
+
 - Conduct a longitudinal analysis to track changes in ACE scores and health outcomes over time. This could help identify trends, potential causal relationships, and the long-term effects of adverse childhood experiences.
+
 - Conduct comparative analyses across different regions, demographics, or cultural contexts to assess variations in ACE scores and associated health outcomes. Understanding these variations can contribute to tailored interventions.
 
 
-
-
-
-## Contribution
+### Contribution
 
 - Lanying: My major contribution to the project involved playing a pivotal role in scheduling expert consultations, organizing interview questions, extracting key takeaways from the interviews, and synthesizing relevant literature provided by the experts. Additionally, I took the initiative to delve into the identified literature, extracting valuable insights to formulate a comprehensive introduction and research questions.Under the guidance of experts, I actively participated in the search for available datasets, engaging in a detailed investigation of variable lists within various data sources. My aim was to discern significant relationships between variables and ACE scores. I also played a crucial role in calculating ACE scores based on the original dataset, contributing significantly to the quantitative aspect of the research.In the realm of data visualizations, my focus was on the demographics section, where I organized and presented narratives that effectively conveyed the intricate relationships between various demographic factors and ACE scores. Furthermore, I led the effort to conclude findings related to demographics, offering a synthesized summary of the observed patterns and disparities.In the latter stages of the project, I took on the responsibility of summarizing the limitations of our study, acknowledging potential constraints and challenges. Additionally, I contributed insights and suggestions for future directions, ensuring a comprehensive and forward-looking conclusion to our research efforts.
 
