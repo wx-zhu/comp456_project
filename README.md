@@ -19,7 +19,7 @@ This project delves into exploring the connections among Adverse Childhood Exper
 To replicate our analysis, follow these steps:
 - Clone the Repository: Use git clone to clone the repository.
 
-- Data: Download the datasets listed in the Data folder's README from https://www.census.gov/programs-surveys/nsch/data/datasets.html.
+- Data: Download the datasets from https://www.census.gov/programs-surveys/nsch/data/datasets.html.
 
 - Environment Setup: Set up your environment using R studio and ensure you have the necessary packages installed.
 
