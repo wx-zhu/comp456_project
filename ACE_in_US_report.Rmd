@@ -104,7 +104,7 @@ CUTHOURS (Cut Down on Hours Worked): Examining the impact of the child's health 
 
 Through this narrative, we aim to convey the intricate relationships uncovered in our demographic exploration, providing a comprehensive understanding of the factors that exhibit a heightened correlation with ACE scores. These insights will not only contribute to the richness of our report but also pave the way for more targeted interventions and strategies in addressing the implications of adverse childhood experiences.
 
-```{r}
+```{r include=FALSE}
 rename_data<- df %>%
   select(ACE_score, A1_MARITAL, A1_RELATION, A2_MARITAL, A2_RELATION,FAMCOUNT,FAMILY_R, FOODSIT, HOUSE_GEN, K11Q43R, CUTHOURS) %>%
   mutate_at(vars(A1_MARITAL, A2_MARITAL), 
@@ -874,7 +874,12 @@ Our analysis grappled with several limitations inherent in the data, including h
 
 - Lanying: My major contribution to the project involved playing a pivotal role in scheduling expert consultations, organizing interview questions, extracting key takeaways from the interviews, and synthesizing relevant literature provided by the experts. Additionally, I took the initiative to delve into the identified literature, extracting valuable insights to formulate a comprehensive introduction and research questions.Under the guidance of experts, I actively participated in the search for available datasets, engaging in a detailed investigation of variable lists within various data sources. My aim was to discern significant relationships between variables and ACE scores. I also played a crucial role in calculating ACE scores based on the original dataset, contributing significantly to the quantitative aspect of the research.In the realm of data visualizations, my focus was on the demographics section, where I organized and presented narratives that effectively conveyed the intricate relationships between various demographic factors and ACE scores. Furthermore, I led the effort to conclude findings related to demographics, offering a synthesized summary of the observed patterns and disparities.In the latter stages of the project, I took on the responsibility of summarizing the limitations of our study, acknowledging potential constraints and challenges. Additionally, I contributed insights and suggestions for future directions, ensuring a comprehensive and forward-looking conclusion to our research efforts.
 
-- Wenxuan: Played a substantial role in crafting diverse visualizations encompassing NA plots, children's mental health correlations, developmental delay analyses, physical health insights, and the conclusive elements of the project. Contributed significantly to the formulation of project conclusions, acknowledging limitations through comprehensive literature referencing, refining final presentations, and ensuring report formatting and revising sections. Contributed significantly to the GitHub repository, focusing on meticulous documentation including a README that succinctly described the project. Additionally, actively participated in data cleaning and the project introduction phase. Maintained consistent schedules for meetings with Lanying to ensure collaborative progress and cohesion. :)
+- Wenxuan: 
+Played a pivotal role in the creation of a wide array of visualizations, spanning across diverse topics such as North American (NA) plots, correlations related to children's mental health, analyses of developmental delays, insights into physical health, and the conclusive elements integral to the overall project. Made substantial contributions to shaping the project's conclusions, demonstrating a keen awareness of limitations through thorough literature referencing. Additionally, played a key role in refining final presentations, ensuring meticulous report formatting, and revising various sections for optimal clarity and coherence.
+
+Significantly contributed to the GitHub repository by placing a strong emphasis on detailed documentation, including the creation of a README that effectively encapsulated the essence of the project. Actively participated in the critical phases of data cleaning and the introduction of the project, showcasing a commitment to the project's overall success.
+
+Maintained a disciplined and consistent schedule for collaborative meetings with Lanying, fostering an environment of shared progress and cohesion throughout the project's development. :)
 
 
 
